@@ -1,0 +1,10 @@
+Purpose: Implements rate calculations and neighbor checks.
+Functions:
+
+arrhenius(): Computes rates using the Arrhenius equation.
+atom_attachment_rate(): Checks if a site is empty and calculates attachment rate.
+atom_diffusion_rate(): Computes diffusion rate based on vacant neighbors.
+get_neighbors(): Returns periodic boundary neighbors (3D).
+Key Lines:
+k = A * np.exp(-E_a / (k_B * T)): Core rate calculation.
+vacant = sum(lattice[n] == 0 for n in neighbors): Counts empty neighbor sites for diffusion.

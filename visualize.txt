@@ -1,0 +1,10 @@
+Purpose: 3D visualization of the lattice.
+Function: visualize_lattice()
+Key Features:
+
+Uses COLOR_MAP from constants.py to color atoms.
+Plots occupied sites as 3D scatter points.
+Displays coverage % in the title.
+Key Lines:
+ax.scatter(x, y, z, c=colors): Renders atoms with type-specific colors.
+ax.view_init(*viewpoint): Controls 3D camera angle.

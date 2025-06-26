@@ -1,0 +1,13 @@
+Purpose: Core KMC simulation logic.
+Class: KMC_Simulation
+Data Structures:
+
+lattice: 3D NumPy array tracking atom types.
+empty_sites/occupied_sites: Sets for fast lookups.
+Key Methods:
+bkl_kmc_step(): Executes one KMC step (event selection + execution).
+_execute_attachment()/_execute_diffusion(): Updates lattice after events.
+run_simulation(): Main simulation loop.
+Key Lines:
+time_step = -np.log(random.random()) / total_rate: BKL algorithm time increment.
+random.choices(events, weights=[e[2]...]): Stochastic event selection.

@@ -1,0 +1,7 @@
+Physical constants (A, E_a, T, k_B) for Arrhenius rate calculations.
+COLOR_MAP: Maps atom types to colors for visualization (e.g., 0: white = empty, 2: blue = mobile atoms).
+EVENT_TYPES: Defines simulation events (diffusion, attachment, desorption) with rate functions and allowed atom types.
+Key Lines:
+A = 1e12: Attempt frequency for rate calculations.
+COLOR_MAP: Used in visualization.py to color atoms.
+EVENT_TYPES: Configures event rules for the KMC core.

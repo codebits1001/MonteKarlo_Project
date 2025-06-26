@@ -1,0 +1,13 @@
+Purpose: Interactive simulation GUI.
+Class: SimulationApp
+Components:
+
+Matplotlib 3D plot + buttons (Start/Pause/Reset).
+Real-time stats (coverage %, mobile atoms).
+Key Methods:
+_run_simulation(): Manages the simulation loop with pause support.
+update_visualization(): Calls visualize_lattice().
+update_stats(): Prints step/event/coverage data.
+Key Lines:
+CONFIG: Sets lattice size, temperature, etc.
+self.fig = plt.figure(): Creates the GUI window.
