@@ -71,3 +71,11 @@ COLOR_MAP = {
     2: 'blue',   # Mobile adatoms
     3: 'red'     # Defects/impurities
 }
+
+
+# Add to constants.py
+DIFFUSION_BARRIERS = {
+    'x': 0.7,  # Lower barrier for x-direction
+    'y': 1.2,  # Higher barrier for y-direction
+    'z': 1.2   # Default for z (if needed)
+} # X-direction easier

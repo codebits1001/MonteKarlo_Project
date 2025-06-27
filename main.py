@@ -132,6 +132,19 @@ class SimulationApp:
                 plt.pause(0.01)
 
         if self._current_step >= CONFIG['num_steps']:
+            total_time = kmc_time  # Use accumulated KMC time instead
+            print(f"\n=== Completed in {total_time:.2e} seconds ===")
+            
+            # ADD THESE LINES TO PRINT EVENT COUNTS:
+            print("\nEvent counts:")
+            print(f"X-direction diffusions: {self.sim._event_counts['diffuse_x']}")
+            print(f"Y-direction diffusions: {self.sim._event_counts['diffuse_y']}")
+            print(f"Attachments: {self.sim._event_counts['attach']}")
+        
+            self._running = False
+            self.start_btn.set_active(True)
+
+        if self._current_step >= CONFIG['num_steps']:
             real_time = time.time() - start_time
             print(f"\n=== Completed in KMC time: {kmc_time:.2e} s (Real time: {real_time:.2f} s) ===")
         self._running = False
@@ -150,6 +163,7 @@ class SimulationApp:
         else:
             self.pause_btn.label.set_text('Pause')
             print("\nSimulation RESUMED")
+    
 
     def reset_simulation(self, event):
         """Reset to initial state"""
