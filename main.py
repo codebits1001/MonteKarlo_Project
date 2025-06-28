@@ -1,58 +1,84 @@
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from kmc import KMC_Simulation
-from visualization import visualize_lattice
+from visualization import CrystalVisualizer
 import numpy as np
 import time
+import sys
+
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Button
+from kmc import KMC_Simulation
+from visualization import CrystalVisualizer
+import numpy as np
+import time
+import sys
 
 # Configuration
-CONFIG = {
-    'lattice_size': 10,
+'''CONFIG = {
+    'lattice_size': 20,
     'temperature': 800,
-    'num_steps': 500,
-    'update_interval': 1,
-    'viewpoint': (25, 45)
+    'num_steps': 1000,
+    'update_interval': 10,
+    'visualize_every': 5,
+    'viewpoint': (30, 45)
 }
+'''
 
+# Change JUST these values in your CONFIG dictionary:
+CONFIG = {
+    'lattice_size': 20,       # Keep unchanged
+    'temperature': 800,       # Keep unchanged
+    'num_steps': 10000,       # Only changed value (from 1000)
+    'update_interval': 100,   # Sparse output (every 100 steps)
+    'visualize_every': 500   # Update visualization every 1000 steps
+}
 class SimulationApp:
     def __init__(self):
-        # Setup figure and UI
-        self.fig = plt.figure(figsize=(10, 8), num="KMC Simulation Controller")
-        self.ax = self.fig.add_subplot(111, projection='3d')
-        plt.subplots_adjust(bottom=0.25)
-        
-        # Simulation state tracking
+        # Setup visualization and UI
+        self._setup_ui()
+        self.visualizer = CrystalVisualizer()
+        self._initialize_simulation()
         self._running = False
         self._current_step = 0
         
-        # Initialize simulation components
+        # Initial state
+        self.update_display()
+        plt.show()
+
+    def _setup_ui(self):
+        """Initialize the user interface"""
+        self.fig = plt.figure(figsize=(12, 8), num="KMC Simulation Controller")
+        self.ax = self.fig.add_subplot(111, projection='3d')
+        plt.subplots_adjust(bottom=0.2)
+        
+        # Create control buttons
         self._create_buttons()
-        self._initialize_simulation()
         
-        # Start in paused state
-        self.sim.paused = True
-        self.pause_btn.label.set_text('Pause')
-        
-        # Initial visualization
-        self.update_visualization(self.sim.lattice)
-        self.update_stats(0, 1, CONFIG['lattice_size']**3 - 1, 'init')
+        # Add status text
+        self.status_text = self.fig.text(
+            0.05, 0.15, 
+            "Initializing simulation...",
+            fontsize=10,
+            bbox=dict(facecolor='white', alpha=0.7)
+        )
 
     def _create_buttons(self):
         """Create and configure control buttons"""
         self.start_btn = Button(
-            plt.axes([0.15, 0.05, 0.25, 0.075]),
+            plt.axes([0.15, 0.05, 0.2, 0.075]),
             'Start', 
-            color='lightblue',
-            hovercolor='lightcyan'
+            color='0.85',
+            hovercolor='0.95'
         )
         self.pause_btn = Button(
-            plt.axes([0.45, 0.05, 0.25, 0.075]),
+            plt.axes([0.4, 0.05, 0.2, 0.075]),
             'Pause', 
             color='0.85',
             hovercolor='0.95'
         )
         self.reset_btn = Button(
-            plt.axes([0.75, 0.05, 0.2, 0.075]),
+            plt.axes([0.65, 0.05, 0.2, 0.075]),
             'Reset', 
             color='0.95',
             hovercolor='1.0'
@@ -66,33 +92,16 @@ class SimulationApp:
     def _initialize_simulation(self):
         """Initialize simulation state"""
         try:
-            self.sim = KMC_Simulation(CONFIG['lattice_size'], CONFIG['temperature'])
-            self.sim.verbose = True
-            self._seed_initial_atoms()
+            self.sim = KMC_Simulation(
+                CONFIG['lattice_size'],
+                CONFIG['temperature']
+            )
+            print("Simulation initialized successfully")
         except Exception as e:
             print(f"Initialization error: {str(e)}")
-            raise
+            sys.exit(1)
 
-    def _seed_initial_atoms(self):
-        """Create substrate layer and seed atom"""
-        size = self.sim.lattice_size
-        
-        # Create fixed substrate (z=0 plane)
-        for x in range(size):
-            for y in range(size):
-                pos = (x, y, 0)
-                self.sim.lattice[pos] = 1  # Type 1 = substrate
-                self.sim.occupied_sites.add(pos)
-                self.sim.empty_sites.discard(pos)
-        
-        # Add mobile seed atom
-        center = size // 2
-        seed_pos = (center, center, 1)
-        self.sim.lattice[seed_pos] = 2  # Type 2 = mobile
-        self.sim.occupied_sites.add(seed_pos)
-        self.sim.empty_sites.discard(seed_pos)
-
-    def start_simulation(self, event):
+    def start_simulation(self, event=None):
         """Run the simulation"""
         if self._running:
             return
@@ -105,50 +114,75 @@ class SimulationApp:
         self._running = True
         self._current_step = 0
         self.sim.paused = False
-        self.pause_btn.label.set_text('Pause')
-        self.start_btn.set_active(False)
+        self._update_button_states()
         
         self._run_simulation()
 
     def _run_simulation(self):
-        """Internal simulation loop with pause support"""
-        start_time = time.time()  # Real clock time for reference
-        kmc_time = 0.0  # KMC accumulated time
+        """Main simulation loop"""
+        start_time = time.time()
         
         while self._current_step < CONFIG['num_steps'] and self._running:
             if self.sim.paused:
                 plt.pause(0.1)
                 continue
                 
+            # Execute KMC step
             _, dt, event_type = self.sim.bkl_kmc_step()
-            kmc_time += dt
             self._current_step += 1
             
+            # Periodic updates
             if self._current_step % CONFIG['update_interval'] == 0:
-                self.update_visualization(self.sim.lattice)
-                occupied = len([p for p in self.sim.occupied_sites if self.sim.lattice[p] == 2])
-                empty = len(self.sim.empty_sites)
-                self.update_stats(self._current_step, occupied, empty, event_type)
-                plt.pause(0.01)
+                self._update_display(event_type)
+                
+            # Visualization
+            if self._current_step % CONFIG['visualize_every'] == 0:
+                self.update_display()
 
+        # Final output
         if self._current_step >= CONFIG['num_steps']:
-            total_time = kmc_time  # Use accumulated KMC time instead
-            print(f"\n=== Completed in {total_time:.2e} seconds ===")
+            self._print_final_stats(start_time)
             
-            # ADD THESE LINES TO PRINT EVENT COUNTS:
-            print("\nEvent counts:")
-            print(f"X-direction diffusions: {self.sim._event_counts['diffuse_x']}")
-            print(f"Y-direction diffusions: {self.sim._event_counts['diffuse_y']}")
-            print(f"Attachments: {self.sim._event_counts['attach']}")
-        
-            self._running = False
-            self.start_btn.set_active(True)
-
-        if self._current_step >= CONFIG['num_steps']:
-            real_time = time.time() - start_time
-            print(f"\n=== Completed in KMC time: {kmc_time:.2e} s (Real time: {real_time:.2f} s) ===")
         self._running = False
-        self.start_btn.set_active(True)
+        self._update_button_states()
+
+    def _update_display(self, event_type):
+        """Update visualization and statistics"""
+        occupied = len([p for p in self.sim.occupied_sites if self.sim.lattice[p] == 2])
+        empty = len(self.sim.empty_sites)
+        
+        # Update console output
+        stats = self._get_stats_text(occupied, empty, event_type)
+        print(stats, end='\r')
+        
+        # Update figure text
+        self.status_text.set_text(stats)
+
+    def _get_stats_text(self, occupied, empty, event_type):
+        """Generate formatted statistics string"""
+        coverage = 100 * occupied / (CONFIG['lattice_size']**3)
+        aspect_ratio = self.sim.get_aspect_ratio()
+        
+        return (
+            f"Step {self._current_step:4d}/{CONFIG['num_steps']} | "
+            f"Event: {event_type.upper():7s} | "
+            f"Mobile: {occupied:3d} | "
+            f"Coverage: {coverage:5.1f}% | "
+            f"Aspect Ratio: {aspect_ratio:.2f}"
+        )
+
+    def _print_final_stats(self, start_time):
+        """Print simulation completion statistics"""
+        real_time = time.time() - start_time
+        print("\n" + "="*50)
+        print("Simulation Complete")
+        print(f"KMC time: {self.sim.time:.2e} s")
+        print(f"Real time: {real_time:.2f} s")
+        print("\nEvent counts:")
+        print(f"X-diffusions: {self.sim._event_counts['diffuse_x']}")
+        print(f"Y-diffusions: {self.sim._event_counts['diffuse_y']}")
+        print(f"Attachments: {self.sim._event_counts['attach']}")
+        print("="*50)
 
     def toggle_pause(self, event):
         """Toggle pause state"""
@@ -157,13 +191,12 @@ class SimulationApp:
             return
             
         self.sim.paused = not self.sim.paused
+        self._update_button_states()
+        
         if self.sim.paused:
-            self.pause_btn.label.set_text('Resume')
             print("\nSimulation PAUSED")
         else:
-            self.pause_btn.label.set_text('Pause')
             print("\nSimulation RESUMED")
-    
 
     def reset_simulation(self, event):
         """Reset to initial state"""
@@ -171,36 +204,33 @@ class SimulationApp:
         self._running = False
         self._current_step = 0
         self.sim.reset()
-        self._seed_initial_atoms()
-        self.update_visualization(self.sim.lattice)
-        self.sim.paused = True
-        self.pause_btn.label.set_text('Pause')
-        self.update_stats(0, 1, CONFIG['lattice_size']**3 - 1, 'reset')
+        self._update_button_states()
+        self.update_display()
 
-    def update_visualization(self, lattice):
-        """Update 3D visualization"""
-        visualize_lattice(lattice, self.ax, CONFIG['viewpoint'])
+    def _update_button_states(self):
+        """Update button appearances based on state"""
+        self.start_btn.set_active(not self._running)
+        self.pause_btn.label.set_text('Resume' if self.sim.paused else 'Pause')
+        self.pause_btn.set_active(self._running)
 
-    def update_stats(self, step, occupied, empty, event_type):
-        """Update and display simulation statistics"""
-        mobile_atoms = np.sum(self.sim.lattice == 2)
-        coverage = 100 * mobile_atoms / (CONFIG['lattice_size']**3)
+    def update_display(self):
+        """Update the full visualization"""
+        metrics = {
+            'x_events': self.sim._event_counts['diffuse_x'],
+            'y_events': self.sim._event_counts['diffuse_y'],
+            'aspect_ratio': self.sim.get_aspect_ratio(),
+            'coverage': len(self.sim.occupied_sites)/self.sim.lattice.size
+        }
         
-        stats = (f"Step {step:4d}/{CONFIG['num_steps']} | "
-                 f"Event: {event_type.upper():7s} | "
-                 f"Mobile: {mobile_atoms:3d} | "
-                 f"Coverage: {coverage:5.1f}%")
-        
-        print(stats, end='\r')
-        return stats
-
-    def show(self):
-        """Display the application"""
-        plt.show()
+        self.visualizer.visualize(
+            self.sim.lattice,
+            metrics=metrics,
+            highlight_defects=True
+        )
 
 if __name__ == "__main__":
     try:
         app = SimulationApp()
-        app.show()
     except Exception as e:
-        print(f"Application error: {str(e)}")
+        print(f"Fatal error: {str(e)}")
+        sys.exit(1)
