@@ -51,17 +51,6 @@ E_a = 1.0  # Higher barrier for bulk diffusion
 T = 800        # Temperature (K)
 k_B = 8.617e-5 # Boltzmann constant (eV/K)
 
-# Event Groups (BKL optimization)
-EVENT_GROUPS = {
-    'diffusion': {
-        'rate_constant': A * np.exp(-E_a / (k_B * T)),
-        'atom_types': [2]  # Mobile atoms
-    },
-    'attachment': {
-        'rate_constant': A * np.exp(-E_a / (k_B * T)),
-        'atom_types': [0]  # Empty sites
-    }
-}
 
 # Visualization settings
 VISUALIZATION_SCALE = 50
@@ -73,9 +62,22 @@ COLOR_MAP = {
 }
 
 
-# Add to constants.py
+# Add z-direction barrier and clarify comments
 DIFFUSION_BARRIERS = {
-    'x': 0.7,  # Lower barrier for x-direction
-    'y': 1.2,  # Higher barrier for y-direction
-    'z': 1.2   # Default for z (if needed)
-} # X-direction easier
+    'x': 0.75,  # Low barrier for fast x-diffusion
+    'y': 0.95,  # Higher barrier for y-diffusion
+    'z': 1.2    # Highest barrier for z-diffusion (adjust as needed)
+}
+
+# Update event groups to include z-diffusion
+EVENT_GROUPS = {
+    'diffusion': {
+        'rate_constant': A * np.exp(-E_a / (k_B * T)),
+        'atom_types': [2],  # Mobile atoms
+        'directions': ['x', 'y', 'z']  # Explicit directions
+    },
+    'attachment': {
+        'rate_constant': A * np.exp(-E_a / (k_B * T)),
+        'atom_types': [0]  # Empty sites
+    }
+}

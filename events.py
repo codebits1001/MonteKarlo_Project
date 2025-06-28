@@ -1,13 +1,25 @@
 import numpy as np
 import random
-from constants import A, E_a, k_B, T, DIFFUSION_BARRIERS  # Added DIFFUSION_BARRIERS
+from constants import A, E_a, k_B, T, DIFFUSION_BARRIERS
 
 def arrhenius(E_a, T, verbose=False):
-    """Calculate rate using Arrhenius equation"""
+    """Calculate rate using Arrhenius equation.
+    Args:
+        E_a (float): Activation energy (eV)
+        T (float): Temperature (K)
+    Returns:
+        float: Rate in Hz
+    """
     return A * np.exp(-E_a / (k_B * T))
 
 def get_neighbors(position, lattice):
-    """Get periodic neighbors in 3D lattice"""
+    """Get all periodic neighbors in 3D lattice.
+    Args:
+        position: (x,y,z) tuple
+        lattice: 3D numpy array
+    Returns:
+        list: 6 neighbor positions (periodic)
+    """
     x, y, z = position
     shape = lattice.shape
     return [
@@ -20,42 +32,55 @@ def get_neighbors(position, lattice):
     ]
 
 def get_diffusion_rate_anisotropic(position, lattice, direction, temperature):
-    """Calculate directional diffusion rate with proper boundary checks"""
-    E_a = DIFFUSION_BARRIERS[direction.lower()]
+    """Calculate directional diffusion rate with boundary checks.
+    Args:
+        position: (x,y,z) of diffusing atom
+        lattice: 3D numpy array
+        direction: 'x', 'y', or 'z'
+        temperature: Current temperature (K)
+    Returns:
+        float: Diffusion rate in Hz
+    """
+    # Validate direction input
+    direction = direction.lower()
+    if direction not in DIFFUSION_BARRIERS:
+        raise ValueError(f"Invalid direction '{direction}'. Use 'x', 'y', or 'z'")
+
+    E_a = DIFFUSION_BARRIERS[direction]
     x, y, z = position
-    size = lattice.shape[0]  # Assuming cubic lattice
+    size = lattice.shape[0]  # Assumes cubic lattice
     
-    # Get periodic neighbors
-    if direction.lower() == 'x':
-        neighbors = [
-            ((x + 1) % size, y, z),
-            ((x - 1) % size, y, z)
-        ]
-    else:  # y-direction
-        neighbors = [
-            (x, (y + 1) % size, z),
-            (x, (y - 1) % size, z)
-        ]
+    # Get periodic neighbors in specified direction
+    if direction == 'x':
+        neighbors = [((x+1)%size, y, z), ((x-1)%size, y, z)]
+    elif direction == 'y':
+        neighbors = [(x, (y+1)%size, z), (x, (y-1)%size, z)]
+    else:  # z-direction
+        neighbors = [(x, y, (z+1)%size), (x, y, (z-1)%size)]
     
+    # Count vacant neighbor sites
     vacant = sum(1 for n in neighbors if lattice[n] == 0)
+    
     return arrhenius(E_a, temperature) * vacant
 
-
-def atom_diffusion_rate(position, lattice, temperature):
-    """Original isotropic version (maintains backward compatibility)"""
-    return get_diffusion_rate_anisotropic(position, lattice, 'x', temperature)
-
 def get_group_rates(lattice, temperature):
-    """Calculate total rates for all event groups (BKL optimization)"""
-    rates = {
-        'diffusion': 0.0,
-        'attachment': 0.0
-    }
+    """Calculate total rates for all event groups (BKL optimization).
+    Args:
+        lattice: Current lattice state
+        temperature: Simulation temperature (K)
+    Returns:
+        dict: {'diffusion': total_diff_rate, 'attachment': total_attach_rate}
+    """
+    rates = {'diffusion': 0.0, 'attachment': 0.0}
     
     # Diffusion group (mobile atoms)
     mobile_atoms = np.argwhere(lattice == 2)
     for pos in mobile_atoms:
-        rates['diffusion'] += get_diffusion_rate_anisotropic(pos, lattice, 'x', temperature)  # Using x as default
+        # Sum rates for all possible diffusion directions
+        for direction in ['x', 'y', 'z']:
+            rates['diffusion'] += get_diffusion_rate_anisotropic(
+                tuple(pos), lattice, direction, temperature
+            )
     
     # Attachment group (empty sites)
     empty_sites = np.argwhere(lattice == 0)
@@ -67,5 +92,8 @@ if __name__ == "__main__":
     # Test anisotropic diffusion
     test_lattice = np.zeros((5,5,5), dtype=int)
     test_lattice[2,2,2] = 2  # Single atom at center
+    
+    print("=== Diffusion Rate Tests ===")
     print("X-rate:", get_diffusion_rate_anisotropic((2,2,2), test_lattice, 'x', 800))
     print("Y-rate:", get_diffusion_rate_anisotropic((2,2,2), test_lattice, 'y', 800))
+    print("Z-rate:", get_diffusion_rate_anisotropic((2,2,2), test_lattice, 'z', 800))
