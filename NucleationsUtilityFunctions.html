@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nucleation Function Documentation</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 40px;
+      background-color: #f9f9f9;
+      color: #333;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      color: #003366;
+    }
+    code {
+      background: #eee;
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-size: 0.95em;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 10px;
+      border-left: 4px solid #0066cc;
+      overflow-x: auto;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Nucleation Functions Documentation</h1>
+  <p>This documentation provides a full reference for the core functions used to simulate classical nucleation during metal 3D printing processes.</p>
+
+  <div class="section">
+    <h2>1. compute_undercooling(T_m, T)</h2>
+    <p><strong>Formula:</strong> ΔT = Tₘ − T</p>
+    <p><strong>Description:</strong> Calculates undercooling, the key thermodynamic driving force for nucleation.</p>
+    <p><strong>Returns:</strong> Undercooling in Kelvin (K).</p>
+  </div>
+
+  <div class="section">
+    <h2>2. compute_delta_Gv(L, delta_T, T_m)</h2>
+    <p><strong>Formula:</strong> ΔGᵥ = (L * ΔT) / Tₘ</p>
+    <p><strong>Description:</strong> Computes the volumetric free energy difference between liquid and solid phases.</p>
+  </div>
+
+  <div class="section">
+    <h2>3. compute_critical_radius(gamma, delta_Gv)</h2>
+    <p><strong>Formula:</strong> r* = 2γ / ΔGᵥ</p>
+    <p><strong>Description:</strong> Calculates the minimum stable nucleus size required for growth.</p>
+  </div>
+
+  <div class="section">
+    <h2>4. compute_energy_barrier_homogeneous(gamma, delta_Gv)</h2>
+    <p><strong>Formula:</strong> ΔG* = (16πγ³) / (3ΔGᵥ²)</p>
+    <p><strong>Description:</strong> Returns the energy barrier for homogeneous nucleation.</p>
+  </div>
+
+  <div class="section">
+    <h2>5. compute_f_theta(theta_deg)</h2>
+    <p><strong>Formula:</strong> f(θ) = ((2 + cosθ)(1 - cosθ)²) / 4</p>
+    <p><strong>Description:</strong> Calculates the geometric factor to reduce energy barrier in heterogeneous nucleation.</p>
+  </div>
+
+  <div class="section">
+    <h2>6. compute_energy_barrier_heterogeneous(delta_G_homo, f_theta)</h2>
+    <p><strong>Formula:</strong> ΔG*ₕₑₜ = f(θ) * ΔG*ₕₒₘₒ</p>
+    <p><strong>Description:</strong> Returns the effective energy barrier considering surface effects or impurities.</p>
+  </div>
+
+  <div class="section">
+    <h2>7. compute_nucleation_probability(delta_G_star, T, k_B=1.38e-23)</h2>
+    <p><strong>Formula:</strong> P = exp(−ΔG* / k<sub>B</sub>T)</p>
+    <p><strong>Description:</strong> Computes the probability of nucleation using Arrhenius-like Boltzmann statistics.</p>
+  </div>
+
+  <div class="section">
+    <h2>8. check_nucleation(probability)</h2>
+    <p><strong>Description:</strong> Performs a stochastic trial — returns <code>True</code> if a nucleus forms this timestep.</p>
+  </div>
+
+  <div class="section">
+    <h2>9. modify_gamma_by_impurity(gamma_0, C, alpha)</h2>
+    <p><strong>Formula:</strong> γ(C) = γ₀ * (1 - α * C)</p>
+    <p><strong>Description:</strong> Modifies surface energy in presence of impurities to simulate heterogeneous sites.</p>
+  </div>
+
+  <div class="section">
+    <h2>10. modify_delta_Gv_field(base_delta_Gv, multiplier)</h2>
+    <p><strong>Description:</strong> Applies a field- or site-specific scaling to the driving force ΔGᵥ.</p>
+  </div>
+
+  <hr />
+
+  <p><em>Designed for use in solidification modeling, 3D printing simulations, or kinetic Monte Carlo systems.</em></p>
+  <p><strong>Author:</strong> Govinda Pandey (YG Pandey) | Powered by ChatGPT</p>
+
+</body>
+</html>

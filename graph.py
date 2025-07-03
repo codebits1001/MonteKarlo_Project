@@ -1,48 +1,69 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
+from typing import Dict, List
+from constants import VISUALIZATION
 
-class RealTimeGraph:
+class GraphVisualizer:
     def __init__(self):
-        plt.ion()  # Enable interactive mode for real-time updates
+        sns.set_theme(style="whitegrid", palette=VISUALIZATION['colors'])
+        self.figures = []
 
-        self.fig, self.axs = plt.subplots(1, 2, figsize=(10, 4))
-        self.steps = []
-        self.occupied = []
-        self.unoccupied = []
-        self.attachments = 0
-        self.diffusions = 0
+    def create_growth_plot(self, time_data: List[float], 
+                         coverage_data: List[float],
+                         aspect_ratios: List[float] = None):
+        """Create coverage vs time plot with optional aspect ratio."""
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        
+        # Plot coverage
+        sns.lineplot(x=time_data, y=coverage_data, ax=ax1,
+                    color=VISUALIZATION['colors'][2], label='Coverage')
+        ax1.set_xlabel("Simulation Time (s)")
+        ax1.set_ylabel("Surface Coverage", color=VISUALIZATION['colors'][2])
+        ax1.tick_params(axis='y', labelcolor=VISUALIZATION['colors'][2])
+        
+        # Add aspect ratio if provided
+        if aspect_ratios:
+            ax2 = ax1.twinx()
+            sns.lineplot(x=time_data, y=aspect_ratios, ax=ax2,
+                        color=VISUALIZATION['colors'][5], label='Aspect Ratio')
+            ax2.set_ylabel("Aspect Ratio", color=VISUALIZATION['colors'][5])
+            ax2.tick_params(axis='y', labelcolor=VISUALIZATION['colors'][5])
+        
+        ax1.set_title("Crystal Growth Kinetics")
+        ax1.grid(True, linestyle='--', alpha=0.7)
+        self.figures.append(fig)
+        return fig
 
-        self.bar_labels = ['Attachment', 'Diffusion']
-        self.bar_vals = [0, 0]
-        self.bar_plot = self.axs[1].bar(self.bar_labels, self.bar_vals, color=['green', 'orange'])
+    def create_event_plot(self, time_data: List[float], 
+                        event_counts: Dict[str, List[int]]):
+        """Create event distribution plot."""
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        for event, counts in event_counts.items():
+            if sum(counts) > 0:  # Only plot if events occurred
+                sns.lineplot(x=time_data, y=counts, ax=ax,
+                            label=event.replace('_', ' ').title())
+        
+        ax.set_title("Event Distribution Over Time")
+        ax.set_xlabel("Simulation Time (s)")
+        ax.set_ylabel("Event Count")
+        ax.legend(title="Event Type")
+        ax.grid(True, linestyle='--', alpha=0.7)
+        self.figures.append(fig)
+        return fig
 
-        self.axs[0].set_title("Site Occupancy Over Time")
-        self.axs[0].set_xlabel("Step")
-        self.axs[0].set_ylabel("Number of Sites")
-        self.occupied_plot, = self.axs[0].plot([], [], label="Occupied", color='blue')
-        self.unoccupied_plot, = self.axs[0].plot([], [], label="Unoccupied", color='red')
-        self.axs[0].legend()
-        self.fig.tight_layout()
+    def save_plot(self, filename: str):
+        """Save most recent plot to file."""
+        if self.figures:
+            self.figures[-1].savefig(filename, bbox_inches='tight', dpi=300)
 
-    def update(self, step, occupied_count, unoccupied_count, event_type):
-        self.steps.append(step)
-        self.occupied.append(occupied_count)
-        self.unoccupied.append(unoccupied_count)
-
-        if event_type == 'attach':
-            self.attachments += 1
-        elif event_type == 'diffuse':
-            self.diffusions += 1
-
-        # Update line plots
-        self.occupied_plot.set_data(self.steps, self.occupied)
-        self.unoccupied_plot.set_data(self.steps, self.unoccupied)
-        self.axs[0].relim()
-        self.axs[0].autoscale_view()
-
-        # Update bar plot
-        self.bar_vals = [self.attachments, self.diffusions]
-        for bar, new_height in zip(self.bar_plot, self.bar_vals):
-            bar.set_height(new_height)
-
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+    def close(self):
+        """Close all plot figures safely."""
+        import matplotlib.pyplot as plt
+        for fig in self.figures:
+            try:
+                plt.close(fig)
+            except:
+                pass
+        self.figures = []
+        plt.close('all')  # Ensure all figures are closed

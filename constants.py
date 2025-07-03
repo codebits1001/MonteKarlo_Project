@@ -1,83 +1,67 @@
-# Simulation constants
-'''A = 1e12       # Attempt frequency (Hz)
-E_a = 0.7      # Diffusion barrier (eV)
-T = 800        # Temperature (K)
-k_B = 8.617e-5 # Boltzmann constant (eV/K)
 
-# Visualization settings
-VISUALIZATION_SCALE = 50
-COLOR_MAP = {
-    0: 'white',  # Empty
-    1: 'blue',   # Host atoms
-    2: 'red',    # Reserved
-    3: 'green'   # Reserved
-}
+#Bulk diffusion, also known as lattice diffusion or volume diffusion, refers to the movement of atoms or molecules within the bulk of a solid material, 
+# rather than just at the surface. It's a process where these particles move through the crystal lattice, either interstitially (between lattice sites) or substitutionally (replacing other atoms). 
+# This movement is typically driven by concentration gradients and temperature, with higher temperatures generally leading to faster diffusion. 
 
-# Simulation control
-MAX_STEPS = 1000
-TEMPERATURE = 800  # K
-
-COLOR_MAP = {
-    0: 'white',  # Empty
-    1: 'gray',   # Substrate (fixed)
-    2: 'blue',   # Mobile adatoms
-    3: 'red'     # Defects/impurities
-}
-
-# In constants.py
-EVENT_TYPES = {
-    'diffusion': {
-        'rate_function': 'atom_diffusion_rate',
-        'allowed_types': [2]  # Only mobile atoms
-    },
-    'attachment': {
-        'rate_function': 'atom_attachment_rate',
-        'allowed_types': [0]  # Only empty sites
-    },
-    'desorption': {  # New event type
-        'rate_function': 'atom_desorption_rate',
-        'allowed_types': [2],
-        'E_a': 1.2  # eV, example value
-    }
-}
+#the diffusion barrier energy (or activation energy for diffusion) is the energy required for an atom or molecule to move from one location to another within a material.
+#  It represents the energy needed to overcome the potential energy barrier between two stable positions, 
+# such as moving from one lattice site to a neighboring vacancy. This energy barrier significantly influences the rate of diffusion, 
+# with higher barriers leading to slower diffusion. 
 
 
-'''
+#june 30
 import numpy as np
-# Simulation constants
-A = 1e10  # More typical attempt frequency
-E_a = 1.0  # Higher barrier for bulk diffusion
-      # Base diffusion barrier (eV)
-T = 800        # Temperature (K)
-k_B = 8.617e-5 # Boltzmann constant (eV/K)
 
+# Simulation constants
+SIMULATION_PARAMS = {
+    'A': 1e10,               # Attempt frequency (Hz)
+    'E_a': 1.0,              # Base diffusion barrier (eV)
+    'k_B': 8.617e-5,         # Boltzmann constant (eV/K)
+    'base_temp': 800,        # Default temperature (K)
+    'critical_size': 4       # Minimum cluster size for nucleation
+}
+
+# State definitions
+STATES = {
+    'EMPTY': 0,
+    'SUBSTRATE': 1,
+    'MOBILE': 2,
+    'STABLE': 3,
+    'DEFECT': 4,
+    'NUCLEATION': 5,
+    'CLUSTER': 6
+}
 
 # Visualization settings
-VISUALIZATION_SCALE = 50
-COLOR_MAP = {
-    0: 'white',  # Empty
-    1: 'gray',   # Substrate (fixed)
-    2: 'blue',   # Mobile adatoms
-    3: 'red'     # Defects/impurities
+VISUALIZATION = {
+    'colors': [
+        '#FFFFFF',  # 0: Empty
+        '#4E79A7',  # 1: Substrate
+        '#E15759',  # 2: Mobile
+        '#59A14F',  # 3: Stable
+        '#F28E2B',  # 4: Defect
+        '#EDC948',  # 5: Nucleation
+        '#B07AA1'   # 6: Cluster
+    ],
+    'view_angle': (30, 45),
+    'voxel_alpha': 0.85
 }
 
-
-# Add z-direction barrier and clarify comments
-DIFFUSION_BARRIERS = {
-    'x': 0.75,  # Low barrier for fast x-diffusion
-    'y': 0.95,  # Higher barrier for y-diffusion
-    'z': 1.2    # Highest barrier for z-diffusion (adjust as needed)
+# Diffusion parameters
+DIFFUSION = {
+    'x': 0.75,  # X-direction barrier (eV)
+    'y': 0.95,  # Y-direction barrier (eV)
+    'z': 1.2    # Z-direction barrier (eV)
 }
 
-# Update event groups to include z-diffusion
-EVENT_GROUPS = {
-    'diffusion': {
-        'rate_constant': A * np.exp(-E_a / (k_B * T)),
-        'atom_types': [2],  # Mobile atoms
-        'directions': ['x', 'y', 'z']  # Explicit directions
-    },
-    'attachment': {
-        'rate_constant': A * np.exp(-E_a / (k_B * T)),
-        'atom_types': [0]  # Empty sites
-    }
+# Nucleation parameters
+NUCLEATION = {
+    "T_m": 1700.0,      # Melting point (K)
+    "L": 1.0e9,         # Latent heat (J/m³)
+    "gamma": 0.3,        # Surface energy (J/m²)
+    "theta_deg": 60.0,   # Contact angle (degrees)
+    "A": 1e10            # Attempt frequency (Hz)
 }
+
+# 3D connectivity structure
+STRUCTURE_3D = np.ones((3,3,3), dtype=bool)

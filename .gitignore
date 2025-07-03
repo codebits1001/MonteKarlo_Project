@@ -1,1 +1,4 @@
 lattice/
+__pycache__/
+*.log
+*.dat
