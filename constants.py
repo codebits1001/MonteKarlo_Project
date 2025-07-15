@@ -65,3 +65,13 @@ NUCLEATION = {
 
 # 3D connectivity structure
 STRUCTURE_3D = np.ones((3,3,3), dtype=bool)
+
+# Grain boundary parameters
+GRAIN_BOUNDARY = {
+    'misorientation_threshold': 15.0,  # Degrees
+    'energy_model': 'read-shockley',   # Energy calculation model
+    'low_angle_cutoff': 15.0,         # Low-angle boundary cutoff (degrees)
+    'high_angle_energy': 1.0,         # Energy for high-angle boundaries (J/m²)
+    'sigma_3_energy': 0.3,            # Special Σ3 boundary energy (J/m²)
+    'preferred_misorientation': 60.0   # Preferred misorientation for texture (degrees)
+}

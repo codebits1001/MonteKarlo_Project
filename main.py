@@ -14,10 +14,10 @@ class SimulationApp:
         self.config = {
             'lattice_size': 30,
             'temperature': 800,
-            'num_steps': 1000,
-            'update_interval': 100,
-            'visualize_every': 50,
-            'view_angle': (30, 45),
+            'num_steps': 10000,
+            'update_interval': 150,
+            'visualize_every': 20,
+            'view_angle': (30, 49),
             'save_plots': True,
             'max_coverage': 0.95  # Stop if coverage reaches this value
         }
@@ -228,6 +228,33 @@ class SimulationApp:
             
         except Exception as e:
             print(f"Visualization error: {str(e)}")
+    
+
+    def update_visualization(self):
+        """Update 3D visualization with current state using direct simulation data."""
+        try:
+            # Get current cluster stats
+            current_stats = self.sim.cluster_analyzer.get_cluster_statistics()
+            
+            metrics = {
+                'step': self.current_step,
+                'time': self.sim.time,
+                'coverage': len(self.sim.occupied_sites) / self.sim.lattice.size,
+                'aspect_ratio': self.sim.calculate_aspect_ratio(),
+                'events': self.sim.event_counts,
+                'cluster_stats': current_stats
+            }
+            
+            self.visualizer.visualize_crystal(
+                self.sim.lattice,
+                metrics=metrics,
+                cluster_map=self.sim.cluster_analyzer.cluster_labels,
+                view_angle=self.config['view_angle']
+            )
+            
+        except Exception as e:
+            print(f"Visualization error: {str(e)}")
+
 
     def update_status(self, event_type):
         """Update status display with current metrics."""
